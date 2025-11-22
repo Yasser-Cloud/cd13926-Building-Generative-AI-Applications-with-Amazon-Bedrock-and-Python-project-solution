@@ -60,6 +60,9 @@ def valid_prompt(prompt, model_id=None):
     # Check for Category A (LLM/architecture)
     category_a_found = any(keyword in prompt_lower for keyword in category_a_keywords)
     
+    # Check for Category A (bad word)
+    category_b_found = any(keyword in prompt_lower for keyword in category_b_keywords)
+    
     # Check for Category D (how I work/instructions)
     category_d_found = any(keyword in prompt_lower for keyword in category_d_keywords)
     
