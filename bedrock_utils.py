@@ -47,34 +47,39 @@ def valid_prompt(prompt, model_id=None):
         "sany", "xcmg", "zoomlion", "sumitomo", "engine", "hydraulic", "diesel",
         "machine", "equipment", "construction", "mining", "agricultural"
     ]
-
     
     # Convert prompt to lowercase for case-insensitive matching
     prompt_lower = prompt.lower()
     
-    # Check for Category B (profanity/toxic) first as it's most restrictive
-    for keyword in category_b_keywords:
-        if keyword in prompt_lower:
-            return False
+    # Check for Category B (profanity/toxic) first
+    category_b_found = any(keyword in prompt_lower for keyword in category_b_keywords)
+    if category_b_found:
+        print("Category B: Profanity or toxic content detected")
+        return False
     
     # Check for Category A (LLM/architecture)
     category_a_found = any(keyword in prompt_lower for keyword in category_a_keywords)
-    
-    # Check for Category A (bad word)
-    category_b_found = any(keyword in prompt_lower for keyword in category_b_keywords)
+    if category_a_found:
+        print("Category A: Request about LLM model or architecture")
+        return False
     
     # Check for Category D (how I work/instructions)
     category_d_found = any(keyword in prompt_lower for keyword in category_d_keywords)
+    if category_d_found:
+        print("Category D: Request about how I work or instructions")
+        return False
     
     # Check for Category E (heavy machinery)
     category_e_found = any(keyword in prompt_lower for keyword in category_e_keywords)
+    if category_e_found:
+        print("Category E: Request about heavy machinery")
+        return True
     
-    # Check for Category C (outside heavy machinery)
-    # This is true if none of the other categories match
-    category_c_found = not (category_a_found or category_d_found or category_e_found)
+    # If none of the above, it's Category C (outside heavy machinery)
+    print("Category C: Request outside heavy machinery subject")
+    return False
+
     
-    # Return True only if Category E is found and no other categories match
-    return category_e_found and not (category_a_found or category_b_found or category_c_found or category_d_found)
 def query_knowledge_base(query, kb_id):
     try:
         response = bedrock_kb.retrieve(
