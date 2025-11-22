@@ -31,10 +31,8 @@ def valid_prompt(prompt, model_id=None):
     ]
     
     category_d_keywords = [
-        "how do you", "how does", "instructions", "system prompt", "rules", 
-        "guidelines", "how should", "what are", "your role", "what is", 
-        "how", "what do you", "what are you", "what are your instructions", 
-        "what are your rules", "what is your purpose", "how do you respond"
+        "how do you", "how does", "your instructions", "system prompt", "your rules", 
+          "your role",  "what are your instructions", "what are your rules",  "how do you respond"
     ]
     
     category_e_keywords = [
@@ -79,7 +77,7 @@ def valid_prompt(prompt, model_id=None):
     print("Category C: Request outside heavy machinery subject")
     return False
 
-    
+
 def query_knowledge_base(query, kb_id):
     try:
         response = bedrock_kb.retrieve(
