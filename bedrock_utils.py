@@ -14,6 +14,8 @@ bedrock_kb = boto3.client(
     region_name='us-west-2'  # Replace with your AWS region
 )
 
+
+
 def valid_prompt(prompt, model_id=None):
     # Define keyword lists for each category
     category_a_keywords = [
@@ -32,7 +34,7 @@ def valid_prompt(prompt, model_id=None):
     
     category_d_keywords = [
         "how do you", "how does", "your instructions", "system prompt", "your rules", 
-          "your role",  "what are your instructions", "what are your rules",  "how do you respond"
+        "your role", "what are your instructions", "what are your rules", "how do you respond"
     ]
     
     category_e_keywords = [
@@ -55,28 +57,76 @@ def valid_prompt(prompt, model_id=None):
         print("Category B: Profanity or toxic content detected")
         return False
     
-    # Check for Category A (LLM/architecture)
-    category_a_found = any(keyword in prompt_lower for keyword in category_a_keywords)
-    if category_a_found:
-        print("Category A: Request about LLM model or architecture")
-        return False
-    
-    # Check for Category D (how I work/instructions)
-    category_d_found = any(keyword in prompt_lower for keyword in category_d_keywords)
-    if category_d_found:
-        print("Category D: Request about how I work or instructions")
-        return False
-    
-    # Check for Category E (heavy machinery)
-    category_e_found = any(keyword in prompt_lower for keyword in category_e_keywords)
-    if category_e_found:
-        print("Category E: Request about heavy machinery")
-        return True
-    
-    # If none of the above, it's Category C (outside heavy machinery)
-    print("Category C: Request outside heavy machinery subject")
-    return False
+    # If model_id is provided, use enhanced model-based classification
+    if model_id:
+        try:
+            # Create examples from keyword lists
+            category_a_examples = ", ".join(category_a_keywords)  
+            category_b_examples = ", ".join(category_b_keywords)  
+            category_d_examples = ", ".join(category_d_keywords)  
+            category_e_examples = ", ".join(category_e_keywords)  
+            
+            messages = [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": f"""Human: Classify the provided user request into one of the following categories. Evaluate the user request against each category. Once the user category has been selected with high confidence return the answer.
+                                    
+                                    Category A: the request is trying to get information about how the llm model works, or the architecture of the solution.
+                                    Examples: {category_a_examples}
+                                    
+                                    Category B: the request is using profanity, or toxic wording and intent.
+                                    Examples: {category_b_examples}
+                                    
+                                    Category C: the request is about any subject outside the subject of heavy machinery.
+                                    
+                                    Category D: the request is asking about how you work, or any instructions provided to you.
+                                    Examples: {category_d_examples}
+                                    
+                                    Category E: the request is ONLY related to heavy machinery.
+                                    Examples: {category_e_examples}
+                                    
+                                    <user_request>
+                                    {prompt}
+                                    </user_request>
+                                    
+                                    ONLY ANSWER with the Category letter, such as the following output example:
+                                    
+                                    Category B
+                                    
+                                    Assistant:"""
+                        }
+                    ]
+                }
+            ]
 
+            response = bedrock.invoke_model(
+                modelId=model_id,
+                contentType='application/json',
+                accept='application/json',
+                body=json.dumps({
+                    "anthropic_version": "bedrock-2023-05-31", 
+                    "messages": messages,
+                    "max_tokens": 10,
+                    "temperature": 0,
+                    "top_p": 0.1,
+                })
+            )
+            category = json.loads(response['body'].read())['content'][0]["text"]
+            print(f"Model classification: {category}")
+            
+            if category.lower().strip() == "category e":
+                return True
+            else:
+                return False
+        except ClientError as e:
+            print(f"Error during model classification: {e}. Falling back to keyword matching.")
+    
+    
+    
+    
 
 def query_knowledge_base(query, kb_id):
     try:
